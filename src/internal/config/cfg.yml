@@ -1,0 +1,53 @@
+logs:
+  level: "debug"
+  log-path: "./../logs/sys.log"
+  enable-json-output: true
+
+app:
+  name: "handyhub-admin-svc"
+  timeout: 10
+  version: "1.0.0"
+  host-link: "http://localhost:8002"
+
+database:
+  url: "mongodb://localhost:27017"
+  dbname: "handyhub"
+  user-collection: "users"
+  session-collection: "sessions"
+  timeout: 10
+
+queue:
+  rabbitmq:
+    url: "amqp://guest:guest@localhost:5672/"
+    exchange: "handyhub"
+    exchange-type: "topic"
+    email-queue: "email_queue"
+    prefetch-count: 1
+    prefetch-size: 0
+    global: false
+    reconnect-delay: 5
+    timeout: 10
+    routing-key: "email.send"
+    durable: true
+    auto-delete: false
+    internal: false
+    no-wait: false
+    exclusive: false
+    auto-ack: false
+    no-local: false
+    consumer: "email_consumer"
+
+redis:
+  url: "localhost:6379"
+  password: ""
+  db: 3
+
+security:
+  jwt-key: "your-secret-jwt-key"
+
+server:
+  port: ":8002"
+  mode: "debug"
+  read-timeout: 30
+  write-timeout: 30
+  idle-timeout: 60
