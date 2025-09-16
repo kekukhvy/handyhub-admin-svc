@@ -13,6 +13,7 @@ import (
 
 type Handler interface {
 	GetAllUsers(c *gin.Context)
+	GetUserStats(c *gin.Context)
 }
 
 type handler struct {
@@ -93,4 +94,36 @@ func parseIntParam(c *gin.Context, param string, defaultValue int) int {
 		return defaultValue
 	}
 	return parsed
+}
+
+func (h *handler) GetUserStats(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(h.config.App.Timeout)*time.Second)
+	defer cancel()
+
+	logrus.Info("GetUserStats request received")
+
+	// Get admin user info from context
+	userID, _ := c.Get("user_id")
+	userEmail, _ := c.Get("user_email")
+
+	logrus.WithFields(logrus.Fields{
+		"admin_user_id": userID,
+		"admin_email":   userEmail,
+	}).Debug("Admin user accessing GetUserStats")
+
+	stats, err := h.service.GetUserStats(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get user statistics")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to retrieve user statistics",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    stats,
+		"message": "User statistics retrieved successfully",
+	})
 }

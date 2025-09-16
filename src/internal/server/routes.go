@@ -97,6 +97,7 @@ func setupAdminRoutes(router *gin.Engine, deps *dependency.Manager) {
 	admin.Use(authMiddleware.RequireAdminRights())
 	{
 		admin.GET("/users", handler.GetAllUsers)
+		admin.GET("/users/stats", handler.GetUserStats)
 	}
 
 }

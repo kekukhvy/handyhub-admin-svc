@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	GetAllUsers(ctx context.Context, req *GetAllUsersRequest) (*GetAllUsersResponse, error)
+	GetUserStats(ctx context.Context) (*Stats, error)
 }
 
 type userService struct {
@@ -108,4 +109,25 @@ func isValidStatus(status string) bool {
 		}
 	}
 	return false
+}
+
+func (s *userService) GetUserStats(ctx context.Context) (*Stats, error) {
+	logrus.Debug("Getting user statistics")
+
+	stats, err := s.userRepository.GetUserStats(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get user stats from repository")
+		return nil, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"total":        stats.Total,
+		"active":       stats.Active,
+		"specialists":  stats.Specialists,
+		"clients":      stats.Clients,
+		"suspended":    stats.Suspended,
+		"newThisMonth": stats.NewThisMonth,
+	}).Info("Successfully retrieved user statistics")
+
+	return stats, nil
 }

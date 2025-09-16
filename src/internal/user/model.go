@@ -50,13 +50,13 @@ type Profile struct {
 }
 
 type Stats struct {
-	TotalUsers       int64 `json:"totalUsers" bson:"total_users"`
-	ActiveUsers      int64 `json:"activeUsers" bson:"active_users"`
-	InactiveUsers    int64 `json:"inactiveUsers" bson:"inactive_users"`
-	VerifiedUsers    int64 `json:"verifiedUsers" bson:"verified_users"`
-	UnverifiedUsers  int64 `json:"unverifiedUsers" bson:"unverified_users"`
-	NewUsersToday    int64 `json:"newUsersToday" bson:"new_users_today"`
-	NewUsersThisWeek int64 `json:"newUsersThisWeek" bson:"new_users_this_week"`
+	Total        int64 `json:"total"`
+	Active       int64 `json:"active"`
+	Inactive     int64 `json:"inactive"`
+	Specialists  int64 `json:"specialists"`
+	Clients      int64 `json:"clients"`
+	Suspended    int64 `json:"suspended"`
+	NewThisMonth int64 `json:"newThisMonth"`
 }
 
 // Role constants
