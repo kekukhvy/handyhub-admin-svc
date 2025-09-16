@@ -65,11 +65,14 @@ const (
 
 // GetAllUsersRequest represents request for getting all users
 type GetAllUsersRequest struct {
-	Page   int    `json:"page" form:"page"`
-	Limit  int    `json:"limit" form:"limit"`
-	Role   string `json:"role" form:"role"`
-	Status string `json:"status" form:"status"`
-	Search string `json:"search" form:"search"`
+	Page          int    `json:"page" form:"page"`
+	Limit         int    `json:"limit" form:"limit"`
+	Role          string `json:"role" form:"role"`
+	Status        string `json:"status" form:"status"`
+	Search        string `json:"search" form:"search"`
+	SortBy        string `json:"sortBy" form:"sortBy"`
+	SortOrder     string `json:"sortOrder" form:"sortOrder"`
+	SortDirection int    `json:"-" bson:"-"`
 }
 
 // GetAllUsersResponse represents response for getting all users
@@ -80,6 +83,20 @@ type GetAllUsersResponse struct {
 	Limit      int        `json:"limit"`
 	TotalPages int        `json:"totalPages"`
 }
+
+const (
+	SortByRegistrationDate = "registration_date"
+	SortByFirstName        = "first_name"
+	SortByLastName         = "last_name"
+	SortByEmail            = "email"
+	SortByLastActiveAt     = "last_active_at"
+	SortByRole             = "role"
+)
+
+const (
+	SortOrderAsc  = "asc"
+	SortOrderDesc = "desc"
+)
 
 // ToProfile converts User to UserProfile
 func (u *User) ToProfile() *Profile {

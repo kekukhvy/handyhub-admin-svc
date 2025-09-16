@@ -64,12 +64,12 @@ func (r *userRepository) GetAllUsers(ctx context.Context, req *GetAllUsersReques
 	}
 
 	skip := (req.Page - 1) * req.Limit
-
+	sortOptions := bson.M{req.SortBy: req.SortDirection}
 	// Find options
 	opts := options.Find().
 		SetLimit(int64(req.Limit)).
 		SetSkip(int64(skip)).
-		SetSort(bson.M{"created_at": -1})
+		SetSort(sortOptions)
 
 	cursor, err := collection.Find(ctx, filter, opts)
 	if err != nil {

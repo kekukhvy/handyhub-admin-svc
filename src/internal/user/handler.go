@@ -37,11 +37,13 @@ func (h *handler) GetAllUsers(c *gin.Context) {
 
 	// Parse query parameters
 	req := &GetAllUsersRequest{
-		Page:   parseIntParam(c, "page", 1),
-		Limit:  parseIntParam(c, "limit", 20),
-		Role:   c.Query("role"),
-		Status: c.Query("status"),
-		Search: c.Query("search"),
+		Page:      parseIntParam(c, "page", 1),
+		Limit:     parseIntParam(c, "limit", 20),
+		Role:      c.Query("role"),
+		Status:    c.Query("status"),
+		Search:    c.Query("search"),
+		SortBy:    c.Query("sort-by"),
+		SortOrder: c.Query("sort-order"),
 	}
 
 	logrus.WithFields(logrus.Fields{

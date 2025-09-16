@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"handyhub-admin-svc/src/internal/config"
 	"handyhub-admin-svc/src/internal/models"
 	"math"
@@ -28,7 +27,39 @@ func NewUserService(userRepository Repository, cfg *config.Configuration) Servic
 }
 
 func (s *userService) GetAllUsers(ctx context.Context, req *GetAllUsersRequest) (*GetAllUsersResponse, error) {
-	// Validate and set defaults
+	if err := s.validateRequest(req); err != nil {
+		return nil, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"page": req.Page, "limit": req.Limit, "role": req.Role, "status": req.Status, "search": req.Search,
+	}).Debug("Getting all users")
+
+	users, totalCount, err := s.userRepository.GetAllUsers(ctx, req)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get users from repository")
+		return nil, err
+	}
+
+	profiles := make([]*Profile, len(users))
+	for i, user := range users {
+		profiles[i] = user.ToProfile()
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(req.Limit)))
+	response := &GetAllUsersResponse{
+		Users: profiles, TotalCount: totalCount, Page: req.Page, Limit: req.Limit, TotalPages: totalPages,
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"users_count": len(profiles), "total_count": totalCount, "total_pages": totalPages,
+	}).Info("Successfully retrieved users")
+
+	return response, nil
+}
+
+// validateRequest validates and normalizes the GetAllUsersRequest
+func (s *userService) validateRequest(req *GetAllUsersRequest) error {
 	if req.Limit <= 0 {
 		req.Limit = s.cfg.Search.MinQueryLimit
 	}
@@ -39,55 +70,30 @@ func (s *userService) GetAllUsers(ctx context.Context, req *GetAllUsersRequest) 
 		req.Page = 1
 	}
 
-	// Validate role filter
+	// Reset invalid optional fields to empty/default values instead of erroring
 	if req.Role != "" && !isValidRole(req.Role) {
-		return nil, errors.New("invalid role filter")
+		req.Role = ""
 	}
-
-	// Validate status filter
 	if req.Status != "" && !isValidStatus(req.Status) {
-		return nil, errors.New("invalid status filter")
+		req.Status = ""
+	}
+	if req.SortBy != "" && !isValidSortBy(req.SortBy) {
+		req.SortBy = ""
+	}
+	if req.SortOrder != "" && !isValidSortOrder(req.SortOrder) {
+		req.SortOrder = ""
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"page":   req.Page,
-		"limit":  req.Limit,
-		"role":   req.Role,
-		"status": req.Status,
-		"search": req.Search,
-	}).Debug("Getting all users")
-
-	// Get users from repository
-	users, totalCount, err := s.userRepository.GetAllUsers(ctx, req)
-	if err != nil {
-		logrus.WithError(err).Error("Failed to get users from repository")
-		return nil, err
+	// Set default sort by registration date if not specified or invalid
+	if req.SortBy == "" {
+		req.SortBy = SortByRegistrationDate
+	}
+	if req.SortOrder == "" {
+		req.SortOrder = SortOrderDesc
 	}
 
-	// Convert users to profiles
-	profiles := make([]*Profile, len(users))
-	for i, user := range users {
-		profiles[i] = user.ToProfile()
-	}
-
-	// Calculate total pages
-	totalPages := int(math.Ceil(float64(totalCount) / float64(req.Limit)))
-
-	response := &GetAllUsersResponse{
-		Users:      profiles,
-		TotalCount: totalCount,
-		Page:       req.Page,
-		Limit:      req.Limit,
-		TotalPages: totalPages,
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"users_count": len(profiles),
-		"total_count": totalCount,
-		"total_pages": totalPages,
-	}).Info("Successfully retrieved users")
-
-	return response, nil
+	req.SortDirection = getSortDirection(req.SortOrder)
+	return nil
 }
 
 // isValidRole validates if role is valid
@@ -131,4 +137,32 @@ func (s *userService) GetUserStats(ctx context.Context) (*models.Stats, error) {
 	}).Info("Successfully retrieved user statistics")
 
 	return stats, nil
+}
+
+func isValidSortBy(sortBy string) bool {
+	validSortFields := []string{
+		SortByRegistrationDate,
+		SortByFirstName,
+		SortByLastName,
+		SortByEmail,
+		SortByLastActiveAt,
+		SortByRole,
+	}
+	for _, validField := range validSortFields {
+		if validField == sortBy {
+			return true
+		}
+	}
+	return false
+}
+
+func isValidSortOrder(sortOrder string) bool {
+	return sortOrder == SortOrderAsc || sortOrder == SortOrderDesc
+}
+
+func getSortDirection(sortOrder string) int {
+	if sortOrder == SortOrderAsc {
+		return 1
+	}
+	return -1 // default to descending
 }
