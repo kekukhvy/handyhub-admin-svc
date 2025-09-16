@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"handyhub-admin-svc/src/internal/cache"
 	"handyhub-admin-svc/src/internal/config"
 	"net/http"
 	"strconv"
@@ -17,14 +18,16 @@ type Handler interface {
 }
 
 type handler struct {
-	config  *config.Configuration
-	service Service
+	config       *config.Configuration
+	service      Service
+	cacheService cache.Service
 }
 
-func NewHandler(cfg *config.Configuration, service Service) Handler {
+func NewHandler(cfg *config.Configuration, service Service, cacheService cache.Service) Handler {
 	return &handler{
-		config:  cfg,
-		service: service,
+		config:       cfg,
+		service:      service,
+		cacheService: cacheService,
 	}
 }
 
@@ -111,6 +114,17 @@ func (h *handler) GetUserStats(c *gin.Context) {
 		"admin_email":   userEmail,
 	}).Debug("Admin user accessing GetUserStats")
 
+	userStats, err := h.cacheService.GetUserStats(ctx)
+	if err == nil && userStats != nil {
+		logrus.Debug("User statistics retrieved from cache")
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data":    userStats,
+			"message": "User statistics retrieved successfully (from cache)",
+		})
+		return
+	}
+
 	stats, err := h.service.GetUserStats(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get user statistics")
@@ -120,6 +134,8 @@ func (h *handler) GetUserStats(c *gin.Context) {
 		})
 		return
 	}
+
+	h.cacheService.SaveUserStats(ctx, stats)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

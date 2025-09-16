@@ -60,3 +60,5 @@ cache:
   expiration-minutes: 60
   session-expiration-minutes: 30
   extended-expiration-minutes: 30
+  user-stat-key: "user_stats"
+  user-stat-expiration-minutes: 30

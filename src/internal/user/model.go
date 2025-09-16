@@ -49,16 +49,6 @@ type Profile struct {
 	UpdatedAt        time.Time          `json:"updatedAt"`
 }
 
-type Stats struct {
-	Total        int64 `json:"total"`
-	Active       int64 `json:"active"`
-	Inactive     int64 `json:"inactive"`
-	Specialists  int64 `json:"specialists"`
-	Clients      int64 `json:"clients"`
-	Suspended    int64 `json:"suspended"`
-	NewThisMonth int64 `json:"newThisMonth"`
-}
-
 // Role constants
 const (
 	RoleAdmin    = "admin"

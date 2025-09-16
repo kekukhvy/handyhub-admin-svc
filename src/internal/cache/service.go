@@ -18,6 +18,8 @@ type Service interface {
 	GetActiveSession(ctx context.Context, key string) (*session.Session, error)
 	UpdateSessionActivity(ctx context.Context, key string) error
 	CacheActiveSession(ctx context.Context, session *session.Session) error
+	SaveUserStats(ctx context.Context, stats *models.Stats) error
+	GetUserStats(ctx context.Context) (*models.Stats, error)
 }
 
 type cacheService struct {
@@ -107,4 +109,41 @@ func (c *cacheService) CacheActiveSession(ctx context.Context, session *session.
 
 	logrus.WithField("session_id", session.SessionID).Debug("Session cached successfully")
 	return nil
+}
+
+func (c *cacheService) SaveUserStats(ctx context.Context, stats *models.Stats) error {
+	data, err := json.Marshal(stats)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to marshal user stats for cache")
+		return models.ErrRedisSet
+	}
+	expiration := time.Until(time.Now().Add(time.Minute * time.Duration(c.cfg.UsetStatExpirationMinutes)))
+	err = c.client.Set(ctx, c.cfg.UserStatKey, data, expiration).Err()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to cache stats")
+		return models.ErrRedisSet
+	}
+	return nil
+}
+
+func (c *cacheService) GetUserStats(ctx context.Context) (*models.Stats, error) {
+
+	data, err := c.client.Get(ctx, c.cfg.UserStatKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			logrus.Debug("User stats not found in cache")
+			return nil, nil // Not an error, just not found
+		}
+		logrus.WithError(err).Error("Failed to get user stats from cache")
+		return nil, models.ErrRedisGet
+	}
+
+	var stats models.Stats
+	if err := json.Unmarshal([]byte(data), &stats); err != nil {
+		logrus.WithError(err).Error("Failed to unmarshal user stats from cache")
+		return nil, models.ErrRedisGet
+	}
+
+	logrus.Debug("User stats retrieved from cache successfully")
+	return &stats, nil
 }

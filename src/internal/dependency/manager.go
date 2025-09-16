@@ -27,11 +27,11 @@ func NewDependencyManager(router *gin.Engine,
 	redisClient *clients.RedisClient,
 	rabbitMQ *clients.RabbitMQ,
 	cfg *config.Configuration) *Manager {
-
+	cacheService := cache.NewCacheService(redisClient.Client, cfg)
 	userRepo := user.NewUserRepository(mongodb, cfg.Database.UserCollection)
 	userService := user.NewUserService(userRepo, cfg)
-	userHandler := user.NewHandler(cfg, userService)
-	cacheService := cache.NewCacheService(redisClient.Client, cfg)
+	userHandler := user.NewHandler(cfg, userService, cacheService)
+
 	sessionRepo := session.NewSessionRepository(mongodb, cfg.Database.SessionCollection)
 	return &Manager{
 		Router:       router,

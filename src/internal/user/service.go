@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"handyhub-admin-svc/src/internal/config"
+	"handyhub-admin-svc/src/internal/models"
 	"math"
 
 	"github.com/sirupsen/logrus"
@@ -11,7 +12,7 @@ import (
 
 type Service interface {
 	GetAllUsers(ctx context.Context, req *GetAllUsersRequest) (*GetAllUsersResponse, error)
-	GetUserStats(ctx context.Context) (*Stats, error)
+	GetUserStats(ctx context.Context) (*models.Stats, error)
 }
 
 type userService struct {
@@ -111,7 +112,7 @@ func isValidStatus(status string) bool {
 	return false
 }
 
-func (s *userService) GetUserStats(ctx context.Context) (*Stats, error) {
+func (s *userService) GetUserStats(ctx context.Context) (*models.Stats, error) {
 	logrus.Debug("Getting user statistics")
 
 	stats, err := s.userRepository.GetUserStats(ctx)

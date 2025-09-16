@@ -90,9 +90,11 @@ type ServerSettings struct {
 }
 
 type CacheConfig struct {
-	ExpirationMinutes         int `mapstructure:"expiration-minutes"`
-	ExtendedExpirationMinutes int `mapstructure:"extended-expiration-minutes"`
-	SessionExpirationMinutes  int `mapstructure:"session-expiration-minutes"`
+	ExpirationMinutes         int    `mapstructure:"expiration-minutes"`
+	ExtendedExpirationMinutes int    `mapstructure:"extended-expiration-minutes"`
+	SessionExpirationMinutes  int    `mapstructure:"session-expiration-minutes"`
+	UserStatKey               string `mapstructure:"user-stat-key"`
+	UsetStatExpirationMinutes int    `mapstructure:"user-stat-expiration-minutes"`
 }
 
 func Load() *Configuration {
