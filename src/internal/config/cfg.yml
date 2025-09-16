@@ -51,3 +51,12 @@ server:
   read-timeout: 30
   write-timeout: 30
   idle-timeout: 60
+
+search:
+  min-query-limit: 20
+  max-query-limit: 100
+
+cache:
+  expiration-minutes: 60
+  session-expiration-minutes: 30
+  extended-expiration-minutes: 30

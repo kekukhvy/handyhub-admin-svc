@@ -3,6 +3,7 @@ package server
 import (
 	"handyhub-admin-svc/src/clients"
 	"handyhub-admin-svc/src/internal/dependency"
+	"handyhub-admin-svc/src/internal/middleware"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ func SetupRoutes(deps *dependency.Manager) {
 
 	setupHealthEndpoint(deps)
 	setupPublicRoutes(router, deps)
+	setupAdminRoutes(router, deps)
 }
 
 func setupHealthEndpoint(deps *dependency.Manager) {
@@ -32,7 +34,7 @@ func setupHealthEndpoint(deps *dependency.Manager) {
 		}
 
 		redisStatus := "ok"
-		if err := redisClient.Ping(c.Request.Context()).Err(); err != nil {
+		if err := redisClient.Client.Ping(c.Request.Context()).Err(); err != nil {
 			redisStatus = "error: " + err.Error()
 		}
 
@@ -56,7 +58,7 @@ func setupHealthEndpoint(deps *dependency.Manager) {
 			"components": gin.H{
 				"database": gin.H{
 					"mongodb": getStatus(isMonoConnected(mongodb, c)),
-					"redis":   getStatus(isRedisConnected(redisClient, c)),
+					"redis":   getStatus(isRedisConnected(redisClient.Client, c)),
 				},
 				"services": gin.H{
 					"auth":    "operational",
@@ -78,6 +80,25 @@ func setupPublicRoutes(router *gin.Engine, deps *dependency.Manager) {
 			"service":     "handyhub-auth-svc",
 		})
 	})
+}
+
+func setupAdminRoutes(router *gin.Engine, deps *dependency.Manager) {
+	authMiddleware := middleware.NewAuthMiddleware(
+		deps.Config.Security.JwtKey,
+		deps.CacheService,
+		deps.SessionRepo,
+	)
+
+	handler := deps.UserHandler
+	protected := router.Group("/api/v1")
+	protected.Use(authMiddleware.RequireAuth())
+
+	admin := protected.Group("/admin")
+	admin.Use(authMiddleware.RequireAdminRights())
+	{
+		admin.GET("/users", handler.GetAllUsers)
+	}
+
 }
 
 func isMonoConnected(mongodb *clients.MongoDB, c *gin.Context) bool {

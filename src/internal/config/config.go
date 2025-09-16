@@ -16,6 +16,8 @@ type Configuration struct {
 	Redis    Redis            `mapstructure:"redis"`
 	Security SecuritySettings `mapstructure:"security"`
 	Server   ServerSettings   `mapstructure:"server"`
+	Search   SearchConfig     `mapstructure:"search"`
+	Cache    CacheConfig      `mapstructure:"cache"`
 }
 
 type LogsSettings struct {
@@ -37,6 +39,11 @@ type Database struct {
 	UserCollection    string `mapstructure:"user-collection"`
 	SessionCollection string `mapstructure:"session-collection"`
 	Timeout           int    `mapstructure:"timeout"`
+}
+
+type SearchConfig struct {
+	MinQueryLimit int `mapstructure:"min-query-limit"`
+	MaxQueryLimit int `mapstructure:"min-query-limit"`
 }
 
 type QueueConfig struct {
@@ -80,6 +87,12 @@ type ServerSettings struct {
 	ReadTimeout  int    `mapstructure:"read-timeout"`
 	WriteTimeout int    `mapstructure:"write-timeout"`
 	IdleTimeout  int    `mapstructure:"idle-timeout"`
+}
+
+type CacheConfig struct {
+	ExpirationMinutes         int `mapstructure:"expiration-minutes"`
+	ExtendedExpirationMinutes int `mapstructure:"extended-expiration-minutes"`
+	SessionExpirationMinutes  int `mapstructure:"session-expiration-minutes"`
 }
 
 func Load() *Configuration {

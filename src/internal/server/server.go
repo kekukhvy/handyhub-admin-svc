@@ -99,7 +99,7 @@ func (s *Server) setupHTTPServer() error {
 	gin.SetMode(s.config.Server.Mode)
 	router := gin.Default()
 
-	dependencyManager := dependency.NewDependencyManager(router, s.mongodb, s.redisClient.Client, s.rabbitMQ, s.config)
+	dependencyManager := dependency.NewDependencyManager(router, s.mongodb, s.redisClient, s.rabbitMQ, s.config)
 	SetupRoutes(dependencyManager)
 
 	s.httpServer = &http.Server{
