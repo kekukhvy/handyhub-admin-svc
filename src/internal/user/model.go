@@ -91,6 +91,7 @@ const (
 	SortByEmail            = "email"
 	SortByLastActiveAt     = "last_active_at"
 	SortByRole             = "role"
+	SortByStatus           = "status"
 )
 
 const (

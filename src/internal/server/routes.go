@@ -98,6 +98,9 @@ func setupAdminRoutes(router *gin.Engine, deps *dependency.Manager) {
 	{
 		admin.GET("/users", handler.GetAllUsers)
 		admin.GET("/users/stats", handler.GetUserStats)
+		admin.PATCH("/users/:id/activate", handler.ActivateUser)
+		admin.PATCH("/users/:id/deactivate", handler.DeactivateUser)
+		admin.PATCH("/users/:id/suspend", handler.SuspendUser)
 	}
 
 }

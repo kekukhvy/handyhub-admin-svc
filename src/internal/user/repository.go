@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -21,6 +22,8 @@ const (
 type Repository interface {
 	GetAllUsers(ctx context.Context, req *GetAllUsersRequest) ([]*User, int64, error)
 	GetUserStats(ctx context.Context) (*models.Stats, error)
+	GetByID(ctx context.Context, id primitive.ObjectID) (*User, error)
+	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
 }
 
 type userRepository struct {
@@ -101,6 +104,57 @@ func (r *userRepository) GetAllUsers(ctx context.Context, req *GetAllUsersReques
 	}).Debug("Retrieved users successfully")
 
 	return users, totalCount, nil
+}
+
+func (r *userRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*User, error) {
+	collection := r.Collection
+
+	filter := bson.M{
+		"_id":        id,
+		"deleted_at": bson.M{"$exists": false}, // Exclude soft deleted users
+	}
+
+	var user User
+	err := collection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+	collection := r.Collection
+
+	filter := bson.M{
+		"_id":        id,
+		"deleted_at": bson.M{"$exists": false}, // Exclude soft deleted users
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     status,
+			"updated_at": time.Now(),
+		},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		logrus.WithError(err).WithField("user_id", id.Hex()).Error("Failed to update user status")
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		logrus.WithField("user_id", id.Hex()).Warn("No user found to update status")
+		return mongo.ErrNoDocuments
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"user_id": id.Hex(),
+		"status":  status,
+	}).Info("User status updated successfully")
+
+	return nil
 }
 
 func (r *userRepository) GetUserStats(ctx context.Context) (*models.Stats, error) {

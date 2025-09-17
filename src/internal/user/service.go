@@ -7,11 +7,15 @@ import (
 	"math"
 
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Service interface {
 	GetAllUsers(ctx context.Context, req *GetAllUsersRequest) (*GetAllUsersResponse, error)
 	GetUserStats(ctx context.Context) (*models.Stats, error)
+	ActivateUser(ctx context.Context, id string) error
+	DeactivateUser(ctx context.Context, id string) error
+	SuspendUser(ctx context.Context, id string) error
 }
 
 type userService struct {
@@ -56,6 +60,60 @@ func (s *userService) GetAllUsers(ctx context.Context, req *GetAllUsersRequest) 
 	}).Info("Successfully retrieved users")
 
 	return response, nil
+}
+
+func (s *userService) GetUserStats(ctx context.Context) (*models.Stats, error) {
+	logrus.Debug("Getting user statistics")
+
+	stats, err := s.userRepository.GetUserStats(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get user stats from repository")
+		return nil, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"total":        stats.Total,
+		"active":       stats.Active,
+		"specialists":  stats.Specialists,
+		"clients":      stats.Clients,
+		"suspended":    stats.Suspended,
+		"newThisMonth": stats.NewThisMonth,
+	}).Info("Successfully retrieved user statistics")
+
+	return stats, nil
+}
+
+// ActivateUser activates a user
+func (s *userService) ActivateUser(ctx context.Context, id string) error {
+	return s.updateUserStatus(ctx, id, StatusActive)
+}
+
+// DeactivateUser deactivates a user
+func (s *userService) DeactivateUser(ctx context.Context, id string) error {
+	return s.updateUserStatus(ctx, id, StatusInactive)
+}
+
+// SuspendUser suspends a user
+func (s *userService) SuspendUser(ctx context.Context, id string) error {
+	return s.updateUserStatus(ctx, id, StatusSuspended)
+}
+
+// updateUserStatus is a helper method to update user status
+func (s *userService) updateUserStatus(ctx context.Context, id, status string) error {
+	userID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return models.ErrInvalidParams
+	}
+
+	err = s.userRepository.UpdateStatus(ctx, userID, status)
+
+	if err != nil {
+		logrus.Errorf("Error updating user status for %s to %s: %v", id, status, err)
+		return err
+	}
+
+	logrus.Infof("User %s status updated to %s", id, status)
+	return nil
 }
 
 // validateRequest validates and normalizes the GetAllUsersRequest
@@ -118,27 +176,6 @@ func isValidStatus(status string) bool {
 	return false
 }
 
-func (s *userService) GetUserStats(ctx context.Context) (*models.Stats, error) {
-	logrus.Debug("Getting user statistics")
-
-	stats, err := s.userRepository.GetUserStats(ctx)
-	if err != nil {
-		logrus.WithError(err).Error("Failed to get user stats from repository")
-		return nil, err
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"total":        stats.Total,
-		"active":       stats.Active,
-		"specialists":  stats.Specialists,
-		"clients":      stats.Clients,
-		"suspended":    stats.Suspended,
-		"newThisMonth": stats.NewThisMonth,
-	}).Info("Successfully retrieved user statistics")
-
-	return stats, nil
-}
-
 func isValidSortBy(sortBy string) bool {
 	validSortFields := []string{
 		SortByRegistrationDate,
@@ -147,6 +184,7 @@ func isValidSortBy(sortBy string) bool {
 		SortByEmail,
 		SortByLastActiveAt,
 		SortByRole,
+		SortByStatus,
 	}
 	for _, validField := range validSortFields {
 		if validField == sortBy {

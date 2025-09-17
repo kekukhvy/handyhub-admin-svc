@@ -30,3 +30,14 @@ var (
 	ErrRecordNotFound     = errors.New("record not found")
 	ErrDuplicateRecord    = errors.New("duplicate record")
 )
+
+var (
+	ErrUserNotFound      = errors.New("user not found")
+	ErrDuplicateEmail    = errors.New("user with this email already exists")
+	ErrDuplicatePhone    = errors.New("user with this phone already exists")
+	ErrInvalidParams     = errors.New("invalid parameters")
+	ErrInvalidUserStatus = errors.New("invalid user status")
+	ErrInvalidRole       = errors.New("invalid user role")
+	ErrUserInactive      = errors.New("user is inactive")
+	ErrEmailNotVerified  = errors.New("email is not verified")
+)
