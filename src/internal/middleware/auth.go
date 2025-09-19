@@ -216,6 +216,7 @@ func (m *AuthMiddleware) validateSession(ctx context.Context, sessionID, userID 
 	key := fmt.Sprintf(redisKeyPattern, userID, sessionID)
 	session, err := m.cacheService.GetActiveSession(ctx, key)
 	if err == nil && session != nil {
+		logrus.Info("Session from cache", session)
 		m.cacheService.UpdateSessionActivity(ctx, key)
 		m.sessionRepo.UpdateActivity(ctx, sessionID)
 		return true, nil

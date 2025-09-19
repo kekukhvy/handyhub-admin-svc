@@ -233,7 +233,7 @@ func (h *handler) handleStatusUpdateError(c *gin.Context, userID, status string,
 func (h *handler) sendErrorResponse(c *gin.Context, statusCode int, error, message string) {
 	c.JSON(statusCode, gin.H{
 		"error":   error,
-		"success": false,
+		" ":       false,
 		"message": message,
 	})
 }
