@@ -10,10 +10,10 @@ import (
 type RabbitMQ struct {
 	Conn    *amqp.Connection
 	Channel *amqp.Channel
-	cfg     *config.QueueConfig
+	cfg     *config.MessagingConfig
 }
 
-func NewRabbitMQ(cfg *config.QueueConfig) (*RabbitMQ, error) {
+func NewRabbitMQ(cfg *config.MessagingConfig) (*RabbitMQ, error) {
 	log.WithField("url", "url:"+cfg.RabbitMQ.Url).Info("Connecting to RabbitMQ...")
 	conn, err := amqp.Dial(cfg.RabbitMQ.Url)
 	if err != nil {
@@ -62,8 +62,8 @@ func (r *RabbitMQ) Close() error {
 
 func (r *RabbitMQ) SetupQueue() error {
 	err := r.Channel.ExchangeDeclare(
-		r.cfg.Exchange,
-		r.cfg.ExchangeType,
+		r.cfg.RabbitMQ.Exchange,
+		r.cfg.RabbitMQ.ExchangeType,
 		r.cfg.RabbitMQ.Durable,
 		r.cfg.RabbitMQ.AutoDelete,
 		r.cfg.RabbitMQ.Internal,

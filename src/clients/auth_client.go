@@ -18,17 +18,17 @@ type AuthClient struct {
 	baseURL    string
 	httpClient *http.Client
 	channel    *amqp.Channel
-	cfg        *config.QueueConfig
+	cfg        *config.MessagingConfig
 }
 
 // NewAuthClient creates new auth service client
 func NewAuthClient(cfg *config.Configuration, channel *amqp.Channel) *AuthClient {
 	return &AuthClient{
-		baseURL: cfg.AuthService.URL,
+		baseURL: cfg.ExternalServices.AuthService.URL,
 		channel: channel,
-		cfg:     &cfg.Queue,
+		cfg:     &cfg.Messaging,
 		httpClient: &http.Client{
-			Timeout: time.Duration(cfg.AuthService.Timeout) * time.Second,
+			Timeout: time.Duration(cfg.ExternalServices.AuthService.Timeout) * time.Second,
 		},
 	}
 }
@@ -92,8 +92,8 @@ func (c *AuthClient) PublishActivityWithDetails(userID, sessionID, serviceName, 
 	}
 
 	err = c.channel.Publish(
-		c.cfg.Exchange,
-		c.cfg.UserActivityKey,
+		c.cfg.RabbitMQ.Exchange,
+		c.cfg.Queues.UserActivity.RoutingKey,
 		false, // mandatory
 		false, // immediate
 		amqp.Publishing{
@@ -113,8 +113,8 @@ func (c *AuthClient) PublishActivityWithDetails(userID, sessionID, serviceName, 
 		"session_id":  sessionID,
 		"service":     serviceName,
 		"action":      action,
-		"exchange":    c.cfg.Exchange,
-		"routing_key": c.cfg.UserActivityKey,
+		"exchange":    c.cfg.RabbitMQ.Exchange,
+		"routing_key": c.cfg.Queues.UserActivity.RoutingKey,
 	}).Debug("Activity message published")
 
 	return nil

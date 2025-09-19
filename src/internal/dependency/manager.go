@@ -27,7 +27,7 @@ func NewDependencyManager(router *gin.Engine,
 	rabbitMQ *clients.RabbitMQ,
 	cfg *config.Configuration) *Manager {
 	cacheService := cache.NewCacheService(redisClient.Client, cfg)
-	userRepo := user.NewUserRepository(mongodb, cfg.Database.UserCollection)
+	userRepo := user.NewUserRepository(mongodb, cfg.Database.Collections.Users)
 	userService := user.NewUserService(userRepo, cfg)
 	userHandler := user.NewHandler(cfg, userService, cacheService)
 	authClient := clients.NewAuthClient(cfg, rabbitMQ.Channel)

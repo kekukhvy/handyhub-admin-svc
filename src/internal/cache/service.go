@@ -116,8 +116,8 @@ func (c *cacheService) SaveUserStats(ctx context.Context, stats *models.Stats) e
 		logrus.WithError(err).Error("Failed to marshal user stats for cache")
 		return models.ErrRedisSet
 	}
-	expiration := time.Until(time.Now().Add(time.Minute * time.Duration(c.cfg.UsetStatExpirationMinutes)))
-	err = c.client.Set(ctx, c.cfg.UserStatKey, data, expiration).Err()
+	expiration := time.Until(time.Now().Add(time.Minute * time.Duration(c.cfg.UserStats.ExpirationMinutes)))
+	err = c.client.Set(ctx, c.cfg.UserStats.Key, data, expiration).Err()
 	if err != nil {
 		logrus.WithError(err).Error("Failed to cache stats")
 		return models.ErrRedisSet
@@ -127,7 +127,7 @@ func (c *cacheService) SaveUserStats(ctx context.Context, stats *models.Stats) e
 
 func (c *cacheService) GetUserStats(ctx context.Context) (*models.Stats, error) {
 
-	data, err := c.client.Get(ctx, c.cfg.UserStatKey).Result()
+	data, err := c.client.Get(ctx, c.cfg.UserStats.Key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			logrus.Debug("User stats not found in cache")

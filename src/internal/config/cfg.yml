@@ -1,27 +1,41 @@
-logs:
-  level: "debug"
-  log-path: "./../logs/sys.log"
-  enable-json-output: true
+# HandyHub Admin Service Configuration
 
 app:
   name: "handyhub-admin-svc"
-  timeout: 10
   version: "1.0.0"
+  timeout: 10
   host-link: "http://localhost:8002"
+
+logs:
+  level: "debug"
+  path: "./../logs/sys.log"
+  enable-json-output: true
+
+server:
+  port: ":8002"
+  mode: "debug"
+  read-timeout: 30
+  write-timeout: 30
+  idle-timeout: 60
 
 database:
   url: "mongodb://localhost:27017"
   dbname: "handyhub"
-  user-collection: "users"
-  session-collection: "sessions"
   timeout: 10
+  collections:
+    users: "users"
+    sessions: "sessions"
 
-queue:
-  exchange: "handyhub"
-  exchange-type: "topic"
-  user-activity-key: "activity.update"
+redis:
+  url: "localhost:6379"
+  password: ""
+  db: 3
+
+messaging:
   rabbitmq:
     url: "amqp://guest:guest@localhost:5672/"
+    exchange: "handyhub"
+    exchange-type: "topic"
     prefetch-count: 1
     prefetch-size: 0
     global: false
@@ -34,34 +48,28 @@ queue:
     exclusive: false
     auto-ack: false
     no-local: false
-
-redis:
-  url: "localhost:6379"
-  password: ""
-  db: 3
+  queues:
+    user-activity:
+      name: "user_activity_queue"
+      routing-key: "activity.update"
+      consumer: "user_activity_consumer"
 
 security:
   jwt-key: "your-secret-jwt-key"
-
-server:
-  port: ":8002"
-  mode: "debug"
-  read-timeout: 30
-  write-timeout: 30
-  idle-timeout: 60
-
-search:
-  min-query-limit: 20
-  max-query-limit: 100
 
 cache:
   expiration-minutes: 60
   session-expiration-minutes: 30
   extended-expiration-minutes: 30
-  user-stat-key: "user_stats"
-  user-stat-expiration-minutes: 30
+  user-stats:
+    key: "user_stats"
+    expiration-minutes: 30
 
+search:
+  min-query-limit: 20
+  max-query-limit: 100
 
-auth-service:
-  url: "http://localhost:8001"
-  timeout: 10
+external-services:
+  auth-service:
+    url: "http://localhost:8001"
+    timeout: 10

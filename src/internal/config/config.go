@@ -9,76 +9,29 @@ import (
 )
 
 type Configuration struct {
-	Logs        LogsSettings      `mapstructure:"logs"`
-	App         Application       `mapstructure:"app"`
-	Database    Database          `mapstructure:"database"`
-	Queue       QueueConfig       `mapstructure:"queue"`
-	Redis       Redis             `mapstructure:"redis"`
-	Security    SecuritySettings  `mapstructure:"security"`
-	Server      ServerSettings    `mapstructure:"server"`
-	Search      SearchConfig      `mapstructure:"search"`
-	Cache       CacheConfig       `mapstructure:"cache"`
-	AuthService AuthServiceConfig `mapstructure:"auth-service"`
-}
-
-type LogsSettings struct {
-	Level            string `mapstructure:"level"`
-	Path             string `mapstructure:"log-path"`
-	EnableJSONOutput bool   `mapstructure:"enable-json-output"`
+	App              Application      `mapstructure:"app"`
+	Logs             LogsSettings     `mapstructure:"logs"`
+	Server           ServerSettings   `mapstructure:"server"`
+	Database         Database         `mapstructure:"database"`
+	Redis            Redis            `mapstructure:"redis"`
+	Messaging        MessagingConfig  `mapstructure:"messaging"`
+	Security         SecuritySettings `mapstructure:"security"`
+	Cache            CacheConfig      `mapstructure:"cache"`
+	Search           SearchConfig     `mapstructure:"search"`
+	ExternalServices ExternalServices `mapstructure:"external-services"`
 }
 
 type Application struct {
 	Name     string `mapstructure:"name"`
-	Timeout  int    `mapstructure:"timeout"`
 	Version  string `mapstructure:"version"`
+	Timeout  int    `mapstructure:"timeout"`
 	HostLink string `mapstructure:"host-link"`
 }
 
-type Database struct {
-	Url               string `mapstructure:"url"`
-	DbName            string `mapstructure:"dbname"`
-	UserCollection    string `mapstructure:"user-collection"`
-	SessionCollection string `mapstructure:"session-collection"`
-	Timeout           int    `mapstructure:"timeout"`
-}
-
-type SearchConfig struct {
-	MinQueryLimit int `mapstructure:"min-query-limit"`
-	MaxQueryLimit int `mapstructure:"min-query-limit"`
-}
-
-type QueueConfig struct {
-	Exchange          string         `mapstructure:"exchange"`
-	ExchangeType      string         `mapstructure:"exchange-type"`
-	UserActivityQueue string         `mapstructure:"user-activity-queue"`
-	UserActivityKey   string         `mapstructure:"user-activity-key"`
-	RabbitMQ          RabbitMQConfig `mapstructure:"rabbitmq"`
-}
-
-type RabbitMQConfig struct {
-	Url            string `mapstructure:"url"`
-	PrefetchCount  int    `mapstructure:"prefetch-count"`
-	ReconnectDelay int    `mapstructure:"reconnect-delay"`
-	Timeout        int    `mapstructure:"timeout"`
-	PrefetchSize   int    `mapstructure:"prefetch-size"`
-	Global         bool   `mapstructure:"global"`
-	Durable        bool   `mapstructure:"durable"`
-	AutoDelete     bool   `mapstructure:"auto-delete"`
-	Internal       bool   `mapstructure:"internal"`
-	NoWait         bool   `mapstructure:"no-wait"`
-	Exclusive      bool   `mapstructure:"exclusive"`
-	AutoAck        bool   `mapstructure:"auto-ack"`
-	NoLocal        bool   `mapstructure:"no-local"`
-}
-
-type Redis struct {
-	Url      string `mapstructure:"url"`
-	Password string `mapstructure:"password"`
-	Db       int    `mapstructure:"db"`
-}
-
-type SecuritySettings struct {
-	JwtKey string `mapstructure:"jwt-key"`
+type LogsSettings struct {
+	Level            string `mapstructure:"level"`
+	Path             string `mapstructure:"path"`
+	EnableJSONOutput bool   `mapstructure:"enable-json-output"`
 }
 
 type ServerSettings struct {
@@ -89,12 +42,80 @@ type ServerSettings struct {
 	IdleTimeout  int    `mapstructure:"idle-timeout"`
 }
 
+type Database struct {
+	Url         string              `mapstructure:"url"`
+	DbName      string              `mapstructure:"dbname"`
+	Timeout     int                 `mapstructure:"timeout"`
+	Collections DatabaseCollections `mapstructure:"collections"`
+}
+
+type DatabaseCollections struct {
+	Users    string `mapstructure:"users"`
+	Sessions string `mapstructure:"sessions"`
+}
+
+type Redis struct {
+	Url      string `mapstructure:"url"`
+	Password string `mapstructure:"password"`
+	Db       int    `mapstructure:"db"`
+}
+
+type MessagingConfig struct {
+	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+	Queues   QueuesConfig   `mapstructure:"queues"`
+}
+
+type RabbitMQConfig struct {
+	Url            string `mapstructure:"url"`
+	Exchange       string `mapstructure:"exchange"`
+	ExchangeType   string `mapstructure:"exchange-type"`
+	PrefetchCount  int    `mapstructure:"prefetch-count"`
+	PrefetchSize   int    `mapstructure:"prefetch-size"`
+	Global         bool   `mapstructure:"global"`
+	ReconnectDelay int    `mapstructure:"reconnect-delay"`
+	Timeout        int    `mapstructure:"timeout"`
+	Durable        bool   `mapstructure:"durable"`
+	AutoDelete     bool   `mapstructure:"auto-delete"`
+	Internal       bool   `mapstructure:"internal"`
+	NoWait         bool   `mapstructure:"no-wait"`
+	Exclusive      bool   `mapstructure:"exclusive"`
+	AutoAck        bool   `mapstructure:"auto-ack"`
+	NoLocal        bool   `mapstructure:"no-local"`
+}
+
+type QueuesConfig struct {
+	UserActivity QueueConfig `mapstructure:"user-activity"`
+}
+
+type QueueConfig struct {
+	Name       string `mapstructure:"name"`
+	RoutingKey string `mapstructure:"routing-key"`
+	Consumer   string `mapstructure:"consumer"`
+}
+
+type SecuritySettings struct {
+	JwtKey string `mapstructure:"jwt-key"`
+}
+
 type CacheConfig struct {
-	ExpirationMinutes         int    `mapstructure:"expiration-minutes"`
-	ExtendedExpirationMinutes int    `mapstructure:"extended-expiration-minutes"`
-	SessionExpirationMinutes  int    `mapstructure:"session-expiration-minutes"`
-	UserStatKey               string `mapstructure:"user-stat-key"`
-	UsetStatExpirationMinutes int    `mapstructure:"user-stat-expiration-minutes"`
+	ExpirationMinutes         int            `mapstructure:"expiration-minutes"`
+	SessionExpirationMinutes  int            `mapstructure:"session-expiration-minutes"`
+	ExtendedExpirationMinutes int            `mapstructure:"extended-expiration-minutes"`
+	UserStats                 UserStatsCache `mapstructure:"user-stats"`
+}
+
+type UserStatsCache struct {
+	Key               string `mapstructure:"key"`
+	ExpirationMinutes int    `mapstructure:"expiration-minutes"`
+}
+
+type SearchConfig struct {
+	MinQueryLimit int `mapstructure:"min-query-limit"`
+	MaxQueryLimit int `mapstructure:"max-query-limit"`
+}
+
+type ExternalServices struct {
+	AuthService AuthServiceConfig `mapstructure:"auth-service"`
 }
 
 type AuthServiceConfig struct {
@@ -107,41 +128,34 @@ func Load() *Configuration {
 	logrus.Info("Configuration loaded")
 
 	// Override with environment variables
-	mongoUri := os.Getenv("MONGODB_URL")
-	if mongoUri != "" {
+	if mongoUri := os.Getenv("MONGODB_URL"); mongoUri != "" {
 		cfg.Database.Url = mongoUri
 	}
 
-	dbName := os.Getenv("DB_NAME")
-	if dbName != "" {
+	if dbName := os.Getenv("DB_NAME"); dbName != "" {
 		cfg.Database.DbName = dbName
 	}
 
-	redisUrl := os.Getenv("REDIS_URL")
-	if redisUrl != "" {
+	if redisUrl := os.Getenv("REDIS_URL"); redisUrl != "" {
 		cfg.Redis.Url = redisUrl
 	}
 
-	redisDB := os.Getenv("REDIS_DB")
-	if redisDB != "" {
+	if redisDB := os.Getenv("REDIS_DB"); redisDB != "" {
 		if db, err := strconv.Atoi(redisDB); err == nil {
 			cfg.Redis.Db = db
 		}
 	}
 
-	rabbitmqUrl := os.Getenv("RABBITMQ_URL")
-	if rabbitmqUrl != "" {
-		cfg.Queue.RabbitMQ.Url = rabbitmqUrl
+	if rabbitmqUrl := os.Getenv("RABBITMQ_URL"); rabbitmqUrl != "" {
+		cfg.Messaging.RabbitMQ.Url = rabbitmqUrl
 	}
 
-	jwtKey := os.Getenv("JWT_KEY")
-	if jwtKey != "" {
+	if jwtKey := os.Getenv("JWT_KEY"); jwtKey != "" {
 		cfg.Security.JwtKey = jwtKey
 	}
 
-	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
-	if authServiceURL != "" {
-		cfg.AuthService.URL = authServiceURL
+	if authServiceURL := os.Getenv("AUTH_SERVICE_URL"); authServiceURL != "" {
+		cfg.ExternalServices.AuthService.URL = authServiceURL
 	}
 
 	return cfg
