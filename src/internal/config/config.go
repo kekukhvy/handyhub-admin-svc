@@ -9,15 +9,16 @@ import (
 )
 
 type Configuration struct {
-	Logs     LogsSettings     `mapstructure:"logs"`
-	App      Application      `mapstructure:"app"`
-	Database Database         `mapstructure:"database"`
-	Queue    QueueConfig      `mapstructure:"queue"`
-	Redis    Redis            `mapstructure:"redis"`
-	Security SecuritySettings `mapstructure:"security"`
-	Server   ServerSettings   `mapstructure:"server"`
-	Search   SearchConfig     `mapstructure:"search"`
-	Cache    CacheConfig      `mapstructure:"cache"`
+	Logs        LogsSettings      `mapstructure:"logs"`
+	App         Application       `mapstructure:"app"`
+	Database    Database          `mapstructure:"database"`
+	Queue       QueueConfig       `mapstructure:"queue"`
+	Redis       Redis             `mapstructure:"redis"`
+	Security    SecuritySettings  `mapstructure:"security"`
+	Server      ServerSettings    `mapstructure:"server"`
+	Search      SearchConfig      `mapstructure:"search"`
+	Cache       CacheConfig       `mapstructure:"cache"`
+	AuthService AuthServiceConfig `mapstructure:"auth-service"`
 }
 
 type LogsSettings struct {
@@ -47,18 +48,18 @@ type SearchConfig struct {
 }
 
 type QueueConfig struct {
-	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+	Exchange          string         `mapstructure:"exchange"`
+	ExchangeType      string         `mapstructure:"exchange-type"`
+	UserActivityQueue string         `mapstructure:"user-activity-queue"`
+	UserActivityKey   string         `mapstructure:"user-activity-key"`
+	RabbitMQ          RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 type RabbitMQConfig struct {
 	Url            string `mapstructure:"url"`
-	Exchange       string `mapstructure:"exchange"`
-	ExchangeType   string `mapstructure:"exchange-type"`
-	EmailQueue     string `mapstructure:"email-queue"`
 	PrefetchCount  int    `mapstructure:"prefetch-count"`
 	ReconnectDelay int    `mapstructure:"reconnect-delay"`
 	Timeout        int    `mapstructure:"timeout"`
-	RoutingKey     string `mapstructure:"routing-key"`
 	PrefetchSize   int    `mapstructure:"prefetch-size"`
 	Global         bool   `mapstructure:"global"`
 	Durable        bool   `mapstructure:"durable"`
@@ -68,7 +69,6 @@ type RabbitMQConfig struct {
 	Exclusive      bool   `mapstructure:"exclusive"`
 	AutoAck        bool   `mapstructure:"auto-ack"`
 	NoLocal        bool   `mapstructure:"no-local"`
-	Consumer       string `mapstructure:"consumer"`
 }
 
 type Redis struct {
@@ -95,6 +95,11 @@ type CacheConfig struct {
 	SessionExpirationMinutes  int    `mapstructure:"session-expiration-minutes"`
 	UserStatKey               string `mapstructure:"user-stat-key"`
 	UsetStatExpirationMinutes int    `mapstructure:"user-stat-expiration-minutes"`
+}
+
+type AuthServiceConfig struct {
+	URL     string `mapstructure:"url"`
+	Timeout int    `mapstructure:"timeout"`
 }
 
 func Load() *Configuration {
@@ -132,6 +137,11 @@ func Load() *Configuration {
 	jwtKey := os.Getenv("JWT_KEY")
 	if jwtKey != "" {
 		cfg.Security.JwtKey = jwtKey
+	}
+
+	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
+	if authServiceURL != "" {
+		cfg.AuthService.URL = authServiceURL
 	}
 
 	return cfg

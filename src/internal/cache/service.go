@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"handyhub-admin-svc/src/internal/config"
 	"handyhub-admin-svc/src/internal/models"
-	"handyhub-admin-svc/src/internal/session"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -15,9 +14,9 @@ import (
 )
 
 type Service interface {
-	GetActiveSession(ctx context.Context, key string) (*session.Session, error)
+	GetActiveSession(ctx context.Context, key string) (*models.Session, error)
 	UpdateSessionActivity(ctx context.Context, key string) error
-	CacheActiveSession(ctx context.Context, session *session.Session) error
+	CacheActiveSession(ctx context.Context, session *models.Session) error
 	SaveUserStats(ctx context.Context, stats *models.Stats) error
 	GetUserStats(ctx context.Context) (*models.Stats, error)
 }
@@ -33,7 +32,7 @@ func NewCacheService(client *redis.Client, cfg *config.Configuration) Service {
 		cfg:    &cfg.Cache}
 }
 
-func (c *cacheService) GetActiveSession(ctx context.Context, key string) (*session.Session, error) {
+func (c *cacheService) GetActiveSession(ctx context.Context, key string) (*models.Session, error) {
 	logrus.WithField("key", key).Debug("Getting active session from cache")
 
 	data, err := c.client.Get(ctx, key).Result()
@@ -46,7 +45,7 @@ func (c *cacheService) GetActiveSession(ctx context.Context, key string) (*sessi
 		return nil, models.ErrRedisGet
 	}
 
-	var session session.Session
+	var session models.Session
 	if err := json.Unmarshal([]byte(data), &session); err != nil {
 		logrus.WithError(err).WithField("key", key).Error("Failed to unmarshal session from cache")
 		return nil, models.ErrRedisGet
@@ -86,7 +85,7 @@ func (c *cacheService) UpdateSessionActivity(ctx context.Context, key string) er
 	return nil
 }
 
-func (c *cacheService) CacheActiveSession(ctx context.Context, session *session.Session) error {
+func (c *cacheService) CacheActiveSession(ctx context.Context, session *models.Session) error {
 	key := fmt.Sprintf("session:%s:%s", session.SessionID, session.SessionID)
 
 	data, err := json.Marshal(session)

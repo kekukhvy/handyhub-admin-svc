@@ -82,7 +82,7 @@ func (s *Server) initRedis() error {
 }
 
 func (s *Server) initRabbitMQ() error {
-	rabbitmq, err := clients.NewRabbitMQ(&s.config.Queue.RabbitMQ)
+	rabbitmq, err := clients.NewRabbitMQ(&s.config.Queue)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to initialize RabbitMQ")
 		return err

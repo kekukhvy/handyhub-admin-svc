@@ -10,12 +10,12 @@ import (
 type RabbitMQ struct {
 	Conn    *amqp.Connection
 	Channel *amqp.Channel
-	cfg     *config.RabbitMQConfig
+	cfg     *config.QueueConfig
 }
 
-func NewRabbitMQ(cfg *config.RabbitMQConfig) (*RabbitMQ, error) {
-	log.WithField("url", "url:"+cfg.Url).Info("Connecting to RabbitMQ...")
-	conn, err := amqp.Dial(cfg.Url)
+func NewRabbitMQ(cfg *config.QueueConfig) (*RabbitMQ, error) {
+	log.WithField("url", "url:"+cfg.RabbitMQ.Url).Info("Connecting to RabbitMQ...")
+	conn, err := amqp.Dial(cfg.RabbitMQ.Url)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to connect to RabbitMQ: %v", err)
 		return nil, err
@@ -27,7 +27,7 @@ func NewRabbitMQ(cfg *config.RabbitMQConfig) (*RabbitMQ, error) {
 		return nil, err
 	}
 
-	log.Infof("Connected to RabbitMQ at %s", cfg.Url)
+	log.Infof("Connected to RabbitMQ at %s", cfg.RabbitMQ.Url)
 
 	return &RabbitMQ{
 		Conn:    conn,
@@ -64,10 +64,10 @@ func (r *RabbitMQ) SetupQueue() error {
 	err := r.Channel.ExchangeDeclare(
 		r.cfg.Exchange,
 		r.cfg.ExchangeType,
-		r.cfg.Durable,
-		r.cfg.AutoDelete,
-		r.cfg.Internal,
-		r.cfg.NoWait,
+		r.cfg.RabbitMQ.Durable,
+		r.cfg.RabbitMQ.AutoDelete,
+		r.cfg.RabbitMQ.Internal,
+		r.cfg.RabbitMQ.NoWait,
 		nil,
 	)
 

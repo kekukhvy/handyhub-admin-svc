@@ -26,7 +26,7 @@ func setupHealthEndpoint(deps *dependency.Manager) {
 	cfg := deps.Config
 
 	router.GET("/health", func(c *gin.Context) {
-		log.Info("Health check endopint requested")
+		log.Info("Health check endpoint requested")
 
 		mongoStatus := "ok"
 		if err := mongodb.Client.Ping(c.Request.Context(), nil); err != nil {
@@ -57,7 +57,7 @@ func setupHealthEndpoint(deps *dependency.Manager) {
 			"version": cfg.App.Version,
 			"components": gin.H{
 				"database": gin.H{
-					"mongodb": getStatus(isMonoConnected(mongodb, c)),
+					"mongodb": getStatus(isMongoConnected(mongodb, c)),
 					"redis":   getStatus(isRedisConnected(redisClient.Client, c)),
 				},
 				"services": gin.H{
@@ -77,35 +77,64 @@ func setupPublicRoutes(router *gin.Engine, deps *dependency.Manager) {
 		c.JSON(200, gin.H{
 			"api_version": "v1",
 			"status":      "operational",
-			"service":     "handyhub-auth-svc",
+			"service":     "handyhub-admin-svc",
 		})
 	})
 }
 
 func setupAdminRoutes(router *gin.Engine, deps *dependency.Manager) {
+	// Create auth middleware with AuthClient instead of SessionRepo
 	authMiddleware := middleware.NewAuthMiddleware(
 		deps.Config.Security.JwtKey,
 		deps.CacheService,
-		deps.SessionRepo,
+		deps.AuthClient,
 	)
 
 	handler := deps.UserHandler
-	protected := router.Group("/api/v1")
-	protected.Use(authMiddleware.RequireAuth())
 
-	admin := protected.Group("/admin")
-	admin.Use(authMiddleware.RequireAdminRights())
+	// Apply route name FIRST, then auth middlewares
+	admin := router.Group("/api/v1/admin")
 	{
-		admin.GET("/users", handler.GetAllUsers)
-		admin.GET("/users/stats", handler.GetUserStats)
-		admin.PATCH("/users/:id/activate", handler.ActivateUser)
-		admin.PATCH("/users/:id/deactivate", handler.DeactivateUser)
-		admin.PATCH("/users/:id/suspend", handler.SuspendUser)
-	}
+		admin.GET("/users",
+			setRouteName("getUsersList"),
+			authMiddleware.RequireAuth(),
+			authMiddleware.RequireAdminRights(),
+			handler.GetAllUsers)
 
+		admin.GET("/users/stats",
+			setRouteName("getUsersStats"),
+			authMiddleware.RequireAuth(),
+			authMiddleware.RequireAdminRights(),
+			handler.GetUserStats)
+
+		admin.PATCH("/users/:id/activate",
+			setRouteName("activateUser"),
+			authMiddleware.RequireAuth(),
+			authMiddleware.RequireAdminRights(),
+			handler.ActivateUser)
+
+		admin.PATCH("/users/:id/deactivate",
+			setRouteName("deactivateUser"),
+			authMiddleware.RequireAuth(),
+			authMiddleware.RequireAdminRights(),
+			handler.DeactivateUser)
+
+		admin.PATCH("/users/:id/suspend",
+			setRouteName("suspendUser"),
+			authMiddleware.RequireAuth(),
+			authMiddleware.RequireAdminRights(),
+			handler.SuspendUser)
+	}
 }
 
-func isMonoConnected(mongodb *clients.MongoDB, c *gin.Context) bool {
+func setRouteName(name string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("route_name", name)
+		c.Next()
+	}
+}
+
+func isMongoConnected(mongodb *clients.MongoDB, c *gin.Context) bool {
 	if err := mongodb.Client.Ping(c.Request.Context(), nil); err != nil {
 		return false
 	}

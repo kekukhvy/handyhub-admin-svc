@@ -4,7 +4,6 @@ import (
 	"handyhub-admin-svc/src/clients"
 	"handyhub-admin-svc/src/internal/cache"
 	"handyhub-admin-svc/src/internal/config"
-	"handyhub-admin-svc/src/internal/session"
 	"handyhub-admin-svc/src/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,7 @@ type Manager struct {
 	UserService  user.Service
 	UserHandler  user.Handler
 	CacheService cache.Service
-	SessionRepo  session.Repository
+	AuthClient   *clients.AuthClient
 }
 
 func NewDependencyManager(router *gin.Engine,
@@ -31,8 +30,8 @@ func NewDependencyManager(router *gin.Engine,
 	userRepo := user.NewUserRepository(mongodb, cfg.Database.UserCollection)
 	userService := user.NewUserService(userRepo, cfg)
 	userHandler := user.NewHandler(cfg, userService, cacheService)
+	authClient := clients.NewAuthClient(cfg, rabbitMQ.Channel)
 
-	sessionRepo := session.NewSessionRepository(mongodb, cfg.Database.SessionCollection)
 	return &Manager{
 		Router:       router,
 		Config:       cfg,
@@ -42,6 +41,6 @@ func NewDependencyManager(router *gin.Engine,
 		UserService:  userService,
 		UserHandler:  userHandler,
 		CacheService: cacheService,
-		SessionRepo:  sessionRepo,
+		AuthClient:   authClient,
 	}
 }
